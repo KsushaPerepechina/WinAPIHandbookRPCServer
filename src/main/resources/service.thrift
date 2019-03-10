@@ -1,22 +1,16 @@
 namespace java thrift
 
-struct WinAPITechnologyVersions {
-    1: string versionWin16;
-    2: string versionWin32;
-    3: string versionWin32s;
-    4: string versionWin64;
-}
-
-struct WinAPITechnology {
+struct WinAPIFunction {
     1: i32 id;
     2: string name;
-    3: WinAPITechnologyVersions versions;
-    4: string description;
+    3: string description;
+    4: string params;
+    5: string returnValue;
 }
 
 service WinAPIHandbookService {
-    list<WinAPITechnology> getAllTechnologies();
-    void addTechnology(1: WinAPITechnology technology);
-    void removeTechnology(1: WinAPITechnology technology);
-    void updateTechnology(1:WinAPITechnology technology);
+    list<WinAPIFunction> getAllFunctions();
+    void addFunction(1: WinAPIFunction func);
+    void removeFunction(1: WinAPIFunction func);
+    void updateFunction(1:WinAPIFunction func);
 }

@@ -1,8 +1,7 @@
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import thrift.WinAPIHandbookService;
-import thrift.WinAPITechnology;
-import thrift.WinAPITechnologyVersions;
+import thrift.WinAPIFunction;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -13,18 +12,16 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
     private static final Logger log = LogManager.getLogger(WinAPIHandbookService.class);
 
     @Override
-    public List<WinAPITechnology> getAllTechnologies() {
-        String getAllTechnologiesQuery;
-        ResultSet rs;
-        List<WinAPITechnology> list = new ArrayList<WinAPITechnology>();
+    public List<WinAPIFunction> getAllFunctions() {
+        String getAllFuctionsQuery;
+        ResultSet result;
+        List<WinAPIFunction> functions = new ArrayList<WinAPIFunction>();
         try {
-            getAllTechnologiesQuery = "SELECT * " +
-                    "FROM winapi_technologies " +
-                    "INNER JOIN used_versions " +
-                    "ON winapi_technologies.versions = used_versions.used_versions_id;";
+            getAllFuctionsQuery = "SELECT * " +
+                    "FROM winapi_functions;";
             try {
-                Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
-            } catch (Exception e) {
+                Class.forName("org.postgres.Driver").newInstance();
+            } catch (ClassNotFoundException e) {
                 log.error(e.getMessage());
             }
 
@@ -33,30 +30,29 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             String password = ResourceBundle.getBundle("config").getString("db.password");
 
             Statement stmt = DriverManager.getConnection(url, user, password).createStatement();
-            rs = stmt.executeQuery(getAllTechnologiesQuery);
+            result = stmt.executeQuery(getAllFuctionsQuery);
 
-            while (rs.next()) {
-                list.add(fromResultSetToWinAPITechnologyObject(rs));
+            while (result.next()) {
+                functions.add(fromResultSetToWinAPIFunctionObject(result));
             }
         } catch (Exception e) {
             log.error(e.getMessage());
         }
-        return list;
+        return functions;
+        return null;
     }
 
     @Override
-    public void addTechnology(WinAPITechnology technology) {
-        String addTechnologyQuery;
+    public void addFunction(WinAPIFunction func) {
+        String addFunctionQuery;
         PreparedStatement preparedStatement;
         try {
-            addTechnologyQuery =
-                    "INSERT INTO used_versions(win16, win32, win32s, win64) " +
-                    "VALUES(?, ?, ?, ?, ?) " +
-                    "ON DUPLICATE " +
-                    "KEY UPDATE win16=?, win32=?, win32s=?, win64=?;";
+            addFunctionQuery =
+                    "INSERT INTO winapi_functions " +
+                    "VALUES(?, ?, ?, ?) ;";
 
             try {
-                Class.forName("com.mysql.jdbc.Driver").newInstance();
+                Class.forName("com.postgres.jdbc.Driver").newInstance();
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
@@ -65,32 +61,21 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             String user = ResourceBundle.getBundle("config").getString("db.user");
             String password = ResourceBundle.getBundle("config").getString("db.password");
 
-            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(addTechnologyQuery);
-            preparedStatement.setString(1, technology.getVersions().getVersionForWin16());
-            preparedStatement.setString(2, technology.getVersions().getVersionForWin32());
-            preparedStatement.setString(3, technology.getVersions().getVersionForWin32s());
-            preparedStatement.setString(4, technology.getVersions().getVersionForWin64());
-            preparedStatement.setString(5, technology.getVersions().getVersionForWin16());
-            preparedStatement.setString(6, technology.getVersions().getVersionForWin32());
-            preparedStatement.setString(7, technology.getVersions().getVersionForWin32s());
-            preparedStatement.setString(8, technology.getVersions().getVersionForWin64());
+            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(addFunctionQuery);
             preparedStatement.executeUpdate();
 
-            addTechnologyQuery =
+            addFunctionQuery =
                     "INSERT INTO winapi_technologies(tech_name, versions, description) " +
                     "VALUES(?, " +
                     "(SELECT used_versions_id " +
                     "FROM used_versions " +
                     "WHERE win16=? AND win32=? AND win32s=? AND win64=?), ?) " +
                     "ON DUPLICATE KEY UPDATE tech_name=?;";
-            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(addTechnologyQuery);
-            preparedStatement.setString(1, technology.getName());
-            preparedStatement.setString(2, technology.getVersions().getVersionForWin16());
-            preparedStatement.setString(3, technology.getVersions().getVersionForWin32());
-            preparedStatement.setString(4, technology.getVersions().getVersionForWin32s());
-            preparedStatement.setString(5, technology.getVersions().getVersionForWin64());
-            preparedStatement.setString(6, technology.getDescription());
-            preparedStatement.setString(7, technology.getName());
+            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(addFunctionQuery);
+            preparedStatement.setString(1, func.getName());
+            preparedStatement.setString(2, func.getDescription());
+            preparedStatement.setString(3, func.getParams());
+            preparedStatement.setString(4, func.getReturnValue());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -98,11 +83,11 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
     }
 
     @Override
-    public void removeTechnology(WinAPITechnology technology) {
-        String removeTechnologyQuery;
+    public void removeFunction(WinAPIFunction function) {
+        String removeFunctionQuery;
         PreparedStatement preparedStatement;
         try {
-            removeTechnologyQuery = "DELETE FROM winapi_technologies " +
+            removeFunctionQuery = "DELETE FROM winapi_functions " +
                     "WHERE tech_id=?;";
 
             try {
@@ -115,8 +100,8 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             String user = ResourceBundle.getBundle("config").getString("db.user");
             String password = ResourceBundle.getBundle("config").getString("db.password");
 
-            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(removeTechnologyQuery);
-            preparedStatement.setInt(1, technology.getId());
+            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(removeFunctionQuery);
+            preparedStatement.setInt(1, function.getId());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -124,16 +109,16 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
     }
 
     @Override
-    public void updateTechnology(WinAPITechnology technology) {
-        String updateTechnologyQuery;
+    public void updateFunction(WinAPIFunction func) {
+        String updateFunctionQuery;
         PreparedStatement preparedStatement;
         try {
-            updateTechnologyQuery = "INSERT INTO used_versions(win15, win32, win32s, win64) " +
-                    "VALUES(?, ?, ?, ?, ?) " +
+            updateFunctionQuery = "INSERT INTO used_versions(win16, win32, win32s, win64) " +
+                    "VALUES(?, ?, ?, ?) " +
                     "ON DUPLICATE KEY UPDATE win16=?, win32=?, win32s=?, win64=?;";
 
             try {
-                Class.forName("com.mysql.jdbc.Driver").newInstance();
+                Class.forName("com.postgres.jdbc.Driver").newInstance();
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
@@ -142,48 +127,35 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             String user = ResourceBundle.getBundle("config").getString("db.user");
             String password = ResourceBundle.getBundle("config").getString("db.password");
 
-            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(updateTechnologyQuery);
-            preparedStatement.setString(1, technology.getVersions().getVersionForWin16());
-            preparedStatement.setString(2, technology.getVersions().getVersionForWin32());
-            preparedStatement.setString(3, technology.getVersions().getVersionForWin32s());
-            preparedStatement.setString(4, technology.getVersions().getVersionForWin64());
-            preparedStatement.setString(5, technology.getVersions().getVersionForWin16());
-            preparedStatement.setString(6, technology.getVersions().getVersionForWin32());
-            preparedStatement.setString(7, technology.getVersions().getVersionForWin32s());
-            preparedStatement.setString(8, technology.getVersions().getVersionForWin64());
+            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(updateFunctionQuery);
+
             preparedStatement.executeUpdate();
 
-            updateTechnologyQuery = "UPDATE java_technologies\n" +
-                    "SET tech_name=?, versions=(SELECT used_versions_id\n" +
-                    "FROM used_versions\n" +
-                    "WHERE java_4=? AND java_5=? AND java_6=? AND java_7=? AND java_8=?),\n" +
-                    "description=?\n" +
+            updateFunctionQuery = "UPDATE winapi_technologies " +
+                    "SET tech_name=?, versions=(SELECT used_versions_id " +
+                    "FROM used_versions " +
+                    "WHERE win16=? AND win32=? AND win32s=? AND win64=?), " +
+                    "description=? " +
                     "WHERE tech_id=?;";
-            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(updateTechnologyQuery);
-            preparedStatement.setString(1, technology.getName());
-            preparedStatement.setString(2, technology.getVersions().getVersionForWin16());
-            preparedStatement.setString(3, technology.getVersions().getVersionForWin32());
-            preparedStatement.setString(4, technology.getVersions().getVersionForWin32s());
-            preparedStatement.setString(5, technology.getVersions().getVersionForWin64());
-            preparedStatement.setString(7, technology.getDescription());
-            preparedStatement.setInt(8, technology.getId());
+            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(updateFunctionQuery);
+            preparedStatement.setString(1, func.getName());
+            preparedStatement.setString(2, func.getDescription());
+            preparedStatement.setString(3, func.getParams());
+            preparedStatement.setString(4, func.getReturnValue());
+            preparedStatement.setInt(5, func.getId());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage());
         }
     }
 
-    private WinAPITechnology fromResultSetToWinAPITechnologyObject(ResultSet rs) throws SQLException {
-        WinAPITechnology technology = new WinAPITechnology();
-        technology.setId(rs.getInt("tech_id"));
-        technology.setName(rs.getString("tech_name"));
-        technology.setVersions(new WinAPITechnologyVersions());
-        technology.getVersions().setVersionForWin16(rs.getString("win16"));
-        technology.getVersions().setVersionForWin32(rs.getString("win32));
-        technology.getVersions().setVersionForWin32s(rs.getString("win32s"));
-        technology.getVersions().setVersionForWin64(rs.getString("win64"));
-        technology.setDescription(rs.getString("description"));
-
-        return technology;
+    private WinAPIFunction fromResultSetToWinAPIFunctionObject(ResultSet resultSet) throws SQLException {
+        WinAPIFunction function = new WinAPIFunction();
+        function.setId(resultSet.getInt("id"));
+        function.setName(resultSet.getString("name"));
+        function.setDescription(resultSet.getString("description"));
+        function.setDescription(resultSet.getString("params"));
+        function.setDescription(resultSet.getString("return_value"));
+        return function;
     }
 }
