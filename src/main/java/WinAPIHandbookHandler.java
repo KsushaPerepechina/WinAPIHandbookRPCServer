@@ -13,14 +13,14 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
 
     @Override
     public List<WinAPIFunction> getAllFunctions() {
-        String getAllFuctionsQuery;
+        String getAllFunctionsQuery;
         ResultSet result;
-        List<WinAPIFunction> functions = new ArrayList<WinAPIFunction>();
+        List<WinAPIFunction> functions = new ArrayList<>();
         try {
-            getAllFuctionsQuery = "SELECT * " +
-                    "FROM winapi_functions;";
+            getAllFunctionsQuery = "SELECT * " +
+                    "FROM winapi_function;";
             try {
-                Class.forName("org.postgres.Driver").newInstance();
+                Class.forName("org.postgresql.Driver").newInstance();
             } catch (ClassNotFoundException e) {
                 log.error(e.getMessage());
             }
@@ -30,7 +30,7 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             String password = ResourceBundle.getBundle("config").getString("db.password");
 
             Statement stmt = DriverManager.getConnection(url, user, password).createStatement();
-            result = stmt.executeQuery(getAllFuctionsQuery);
+            result = stmt.executeQuery(getAllFunctionsQuery);
 
             while (result.next()) {
                 functions.add(fromResultSetToWinAPIFunctionObject(result));
@@ -39,7 +39,6 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             log.error(e.getMessage());
         }
         return functions;
-        return null;
     }
 
     @Override
@@ -47,12 +46,11 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
         String addFunctionQuery;
         PreparedStatement preparedStatement;
         try {
-            addFunctionQuery =
-                    "INSERT INTO winapi_functions " +
-                    "VALUES(?, ?, ?, ?) ;";
-
+            addFunctionQuery = "INSERT INTO winapi_function(name, params, return_values, description) " +
+                            "VALUES(?, ?, ?, ?) " +
+                            "ON DUPLICATE KEY UPDATE name=?;";
             try {
-                Class.forName("com.postgres.jdbc.Driver").newInstance();
+                Class.forName("org.postgresql.Driver").newInstance();
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
@@ -62,20 +60,11 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             String password = ResourceBundle.getBundle("config").getString("db.password");
 
             preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(addFunctionQuery);
-            preparedStatement.executeUpdate();
-
-            addFunctionQuery =
-                    "INSERT INTO winapi_technologies(tech_name, versions, description) " +
-                    "VALUES(?, " +
-                    "(SELECT used_versions_id " +
-                    "FROM used_versions " +
-                    "WHERE win16=? AND win32=? AND win32s=? AND win64=?), ?) " +
-                    "ON DUPLICATE KEY UPDATE tech_name=?;";
-            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(addFunctionQuery);
             preparedStatement.setString(1, func.getName());
-            preparedStatement.setString(2, func.getDescription());
-            preparedStatement.setString(3, func.getParams());
-            preparedStatement.setString(4, func.getReturnValue());
+            preparedStatement.setString(2, func.getParams());
+            preparedStatement.setString(3, func.getReturnValue());
+            preparedStatement.setString(4, func.getDescription());
+            preparedStatement.setString(5, func.getName());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -87,11 +76,11 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
         String removeFunctionQuery;
         PreparedStatement preparedStatement;
         try {
-            removeFunctionQuery = "DELETE FROM winapi_functions " +
-                    "WHERE tech_id=?;";
+            removeFunctionQuery = "DELETE FROM winapi_function " +
+                    "WHERE id=?;";
 
             try {
-                Class.forName("com.mysql.jdbc.Driver").newInstance();
+                Class.forName("org.postgresql.Driver").newInstance();
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
@@ -113,12 +102,11 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
         String updateFunctionQuery;
         PreparedStatement preparedStatement;
         try {
-            updateFunctionQuery = "INSERT INTO used_versions(win16, win32, win32s, win64) " +
-                    "VALUES(?, ?, ?, ?) " +
-                    "ON DUPLICATE KEY UPDATE win16=?, win32=?, win32s=?, win64=?;";
-
+            updateFunctionQuery = "UPDATE winapi_function " +
+                    "SET name=?, params=?, return_values=?, description=? " +
+                    "WHERE id=?;";
             try {
-                Class.forName("com.postgres.jdbc.Driver").newInstance();
+                Class.forName("org.postgresql.Driver").newInstance();
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
@@ -128,21 +116,11 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             String password = ResourceBundle.getBundle("config").getString("db.password");
 
             preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(updateFunctionQuery);
-
-            preparedStatement.executeUpdate();
-
-            updateFunctionQuery = "UPDATE winapi_technologies " +
-                    "SET tech_name=?, versions=(SELECT used_versions_id " +
-                    "FROM used_versions " +
-                    "WHERE win16=? AND win32=? AND win32s=? AND win64=?), " +
-                    "description=? " +
-                    "WHERE tech_id=?;";
-            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(updateFunctionQuery);
             preparedStatement.setString(1, func.getName());
-            preparedStatement.setString(2, func.getDescription());
-            preparedStatement.setString(3, func.getParams());
-            preparedStatement.setString(4, func.getReturnValue());
-            preparedStatement.setInt(5, func.getId());
+            preparedStatement.setString(2, func.getParams());
+            preparedStatement.setString(3, func.getReturnValue());
+            preparedStatement.setString(4, func.getDescription());
+            preparedStatement.setInt(5,func.getId());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -153,9 +131,9 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
         WinAPIFunction function = new WinAPIFunction();
         function.setId(resultSet.getInt("id"));
         function.setName(resultSet.getString("name"));
+        function.setParams(resultSet.getString("params"));
+        function.setReturnValue(resultSet.getString("return_value"));
         function.setDescription(resultSet.getString("description"));
-        function.setDescription(resultSet.getString("params"));
-        function.setDescription(resultSet.getString("return_value"));
         return function;
     }
 }

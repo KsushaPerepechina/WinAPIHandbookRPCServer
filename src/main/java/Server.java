@@ -17,9 +17,9 @@ public class Server {
             Integer port = Integer.parseInt(bundle.getString("server.port"));
             TServerSocket serverTransport = new TServerSocket(port);
 
-            WinAPIHandbookHandler handler = new  WinAPIHandbookHandler();
+            WinAPIHandbookHandler handler = new WinAPIHandbookHandler();
             WinAPIHandbookService.Processor<WinAPIHandbookService.Iface> processor =
-                    new WinAPIHandbookService.Processor<WinAPIHandbookService.Iface>(handler);
+                    new WinAPIHandbookService.Processor<>(handler);
             TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
 
             log.info("Service started on " + serverTransport.getServerSocket().getInetAddress() + ":" + serverTransport.getServerSocket().getLocalPort());
