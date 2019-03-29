@@ -46,9 +46,8 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
         String addFunctionQuery;
         PreparedStatement preparedStatement;
         try {
-            addFunctionQuery = "INSERT INTO winapi_function(name, params, return_values, description) " +
-                            "VALUES(?, ?, ?, ?) " +
-                            "ON DUPLICATE KEY UPDATE name=?;";
+            addFunctionQuery = "INSERT INTO winapi_function(name, params, return_value, description) " +
+                            "VALUES(?, ?, ?, ?);";
             try {
                 Class.forName("org.postgresql.Driver").newInstance();
             } catch (Exception e) {
@@ -64,7 +63,36 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             preparedStatement.setString(2, func.getParams());
             preparedStatement.setString(3, func.getReturnValue());
             preparedStatement.setString(4, func.getDescription());
-            preparedStatement.setString(5, func.getName());
+            preparedStatement.executeUpdate();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    @Override
+    public void updateFunction(WinAPIFunction func) {
+        String updateFunctionQuery;
+        PreparedStatement preparedStatement;
+        try {
+            updateFunctionQuery = "UPDATE winapi_function " +
+                    "SET name=?, params=?, return_value=?, description=? " +
+                    "WHERE id=?;";
+            try {
+                Class.forName("org.postgresql.Driver").newInstance();
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+
+            String url = ResourceBundle.getBundle("config").getString("db.url");
+            String user = ResourceBundle.getBundle("config").getString("db.user");
+            String password = ResourceBundle.getBundle("config").getString("db.password");
+
+            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(updateFunctionQuery);
+            preparedStatement.setString(1, func.getName());
+            preparedStatement.setString(2, func.getParams());
+            preparedStatement.setString(3, func.getReturnValue());
+            preparedStatement.setString(4, func.getDescription());
+            preparedStatement.setInt(5,func.getId());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -91,36 +119,6 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
 
             preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(removeFunctionQuery);
             preparedStatement.setInt(1, function.getId());
-            preparedStatement.executeUpdate();
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-    }
-
-    @Override
-    public void updateFunction(WinAPIFunction func) {
-        String updateFunctionQuery;
-        PreparedStatement preparedStatement;
-        try {
-            updateFunctionQuery = "UPDATE winapi_function " +
-                    "SET name=?, params=?, return_values=?, description=? " +
-                    "WHERE id=?;";
-            try {
-                Class.forName("org.postgresql.Driver").newInstance();
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
-
-            String url = ResourceBundle.getBundle("config").getString("db.url");
-            String user = ResourceBundle.getBundle("config").getString("db.user");
-            String password = ResourceBundle.getBundle("config").getString("db.password");
-
-            preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(updateFunctionQuery);
-            preparedStatement.setString(1, func.getName());
-            preparedStatement.setString(2, func.getParams());
-            preparedStatement.setString(3, func.getReturnValue());
-            preparedStatement.setString(4, func.getDescription());
-            preparedStatement.setInt(5,func.getId());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage());

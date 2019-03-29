@@ -15,5 +15,15 @@
         </sourceRoots>
       </configuration>
     </facet>
+    <facet type="thrift" name="Thrift">
+      <configuration>
+        <option name="cleanOutput" value="true" />
+        <option name="generators">
+          <Java>
+            <option name="outputDir" value="file://$MODULE_DIR$/src/main/java/thrift" />
+          </Java>
+        </option>
+      </configuration>
+    </facet>
   </component>
 </module>
