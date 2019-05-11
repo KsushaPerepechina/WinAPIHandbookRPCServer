@@ -11,6 +11,10 @@ import java.util.ResourceBundle;
 class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
     private static final Logger log = LogManager.getLogger(WinAPIHandbookService.class);
 
+    /**
+     * Получение всех функций справочника
+     * @return Список функций
+     */
     @Override
     public List<WinAPIFunction> getAllFunctions() {
         String getAllFunctionsQuery;
@@ -41,6 +45,10 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
         return functions;
     }
 
+    /**
+     * Добавление новой функции в справочник
+     * @param func - добавляемая функция
+     */
     @Override
     public void addFunction(WinAPIFunction func) {
         String addFunctionQuery;
@@ -69,6 +77,10 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
         }
     }
 
+    /**
+     * Обновление сведений об определнной функции
+     * @param func - обновляемая функция
+     */
     @Override
     public void updateFunction(WinAPIFunction func) {
         String updateFunctionQuery;
@@ -99,13 +111,17 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
         }
     }
 
+    /**
+     * Извлечение функции из справочника
+     * @param function - извлекаемая функция
+     */
     @Override
     public void removeFunction(WinAPIFunction function) {
         String removeFunctionQuery;
         PreparedStatement preparedStatement;
         try {
             removeFunctionQuery = "DELETE FROM winapi_function " +
-                    "WHERE id=?;";
+                    "WHERE name=?;";
 
             try {
                 Class.forName("org.postgresql.Driver").newInstance();
@@ -118,13 +134,19 @@ class WinAPIHandbookHandler implements WinAPIHandbookService.Iface {
             String password = ResourceBundle.getBundle("config").getString("db.password");
 
             preparedStatement = DriverManager.getConnection(url, user, password).prepareStatement(removeFunctionQuery);
-            preparedStatement.setInt(1, function.getId());
+            preparedStatement.setString(1, function.getName());
             preparedStatement.executeUpdate();
         } catch (Exception e) {
             log.error(e.getMessage());
         }
     }
 
+    /**
+     * Сериализация полученных в результате запроса к БД данных в объекты функций
+     * @param resultSet - полученные из БД данные
+     * @return Сериализованный объект функции
+     * @throws SQLException - ошибка доступа к БД
+     */
     private WinAPIFunction fromResultSetToWinAPIFunctionObject(ResultSet resultSet) throws SQLException {
         WinAPIFunction function = new WinAPIFunction();
         function.setId(resultSet.getInt("id"));
