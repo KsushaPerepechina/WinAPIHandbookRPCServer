@@ -45,7 +45,7 @@ public class WinAPIHandbookHandlerTest {
 
         List<WinAPIFunction> actual = handler.getAllFunctions();
 
-        List<WinAPIFunction> expected = new ArrayList<>();
+        List<WinAPIFunction> expected = new ArrayList<WinAPIFunction>();
         actual.add(function);
         actual.add(function1);
 

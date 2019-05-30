@@ -19,7 +19,7 @@ public class Server {
 
             WinAPIHandbookHandler handler = new WinAPIHandbookHandler();
             WinAPIHandbookService.Processor<WinAPIHandbookService.Iface> processor =
-                    new WinAPIHandbookService.Processor<>(handler);
+                    new WinAPIHandbookService.Processor<WinAPIHandbookService.Iface>(handler);
             TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
 
             log.info("Service started on " + serverTransport.getServerSocket().getInetAddress() + ":" + serverTransport.getServerSocket().getLocalPort());

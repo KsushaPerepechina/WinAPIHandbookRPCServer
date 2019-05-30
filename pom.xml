@@ -5,35 +5,18 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>by.bsuir</groupId>
     <artifactId>WinAPIHandbookServer</artifactId>
-    <packaging>jar</packaging>
     <name>WinAPIHandbookServer</name>
-    <version>1.0</version>
+    <version>1.0-SNAPSHOT</version>
 
-    <properties>
-            <jdk.version>1.8</jdk.version>
-    </properties>
-
+    <url>http://maven.apache.org</url>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.3</version>
                 <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>by.bsuir.WinAPIHandbookServer.Main</mainClass>
-                        </manifest>
-                    </archive>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
         </plugins>
